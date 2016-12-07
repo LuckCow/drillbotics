@@ -4,6 +4,7 @@ from matplotlib import cm
 import numpy as np
 from copy import copy
 ### https://en.wikipedia.org/wiki/Nelder%E2%80%93Mead_method
+# Demonstration of the downhill simplex algorithm
 
 def f(point):
     #Find Z value from X,Y,Z meshed data
@@ -17,7 +18,7 @@ def f(point):
         if abs(Y[i][0] - point[1]) < 0.25:
             yIndex = i
             break
-    return Z[xIndex][yIndex]
+    return Z[yIndex][xIndex]
 
 def onclick(event):
     if event.button == 2:
@@ -36,24 +37,38 @@ def downhillSimplexIteration(simplex_data):
                 simplex_data[:, j+1] = copy(simplex_data[:, j])
                 simplex_data[:, j] = tmp
 
+    #find centroid of points
     centroid = [sum(simplex_data[0])/size, sum(simplex_data[1])/size]
-    reflection = [ centroid[0] + alpha*(centroid[0] + simplex_data[0][2]),
-                   centroid[1] + alpha*(centroid[1] + simplex_data[1][2]) ]
+
+    #compute reflection point
+    reflection = [ centroid[0] + alpha*(centroid[0] - simplex_data[0][2]),
+                   centroid[1] + alpha*(centroid[1] - simplex_data[1][2]) ]
+    for i, val in enumerate(reflection):
+        if val > limit:
+            reflection[i] = limit
     f_r = f(reflection)
     if f_r >= simplex_data[2][0] and f_r < simplex_data[2][1]:
         print("Reflected")
         simplex_data[:, 2] = reflection + [f_r]
         return
+
+    #Find expansion point
     if f_r < simplex_data[2][0]:
         print("Expanded")
         expansion = [ centroid[0] + gamma*(reflection[0] - centroid[0]),
                       centroid[1] + gamma*(reflection[1] - centroid[1]) ]
+        for i, val in enumerate(expansion):
+            if val > limit:
+                expansion[i] = limit
+        print(expansion)
         f_e = f(expansion)
         if f_e < f_r:
             simplex_data[:, 2] = expansion + [f_e]
         else:
             simplex_data[:, 2] = reflection + [f_r]
         return
+
+    #Contract
     else: #(f_r >= f(simplex_data[2][1])
         contraction = [centroid[0] + rho*(simplex_data[0][2] - centroid[0]),
                        centroid[1] + rho*(simplex_data[1][2] - centroid[1]) ]
@@ -63,6 +78,7 @@ def downhillSimplexIteration(simplex_data):
             simplex_data[:,2] = contraction + [f_c]
             return
     print("Shrink")
+    #Shrink
     bestP = simplex_data[0:2, 0]
     for i in range(1, size):
         newP = [bestP[0] + sigma*(simplex_data[0][i] - bestP[0]),
@@ -76,20 +92,22 @@ X, Y, Z = axes3d.get_test_data(0.05)
 ax.plot_surface(X, Y, Z, rstride=8, cstride=8, alpha=0.3)
 cset = ax.contour(X, Y, Z, zdir='z', offset=-100, cmap=cm.coolwarm)
 
-x = [20, -20., -10.]
-y = [-20., 0, 0.5]
+x = [-15, 10., 10.]
+y = [-10., -10, 10]
 z = []
 for i in range(len(x)):
     z.append(f([x[i], y[i]]))
 
-print(f([-16,-6]), f([15,20]))
+print(f([-10,10]), f([10,-10]))
     
 simplex_data = np.array([x,y,z])
-ax.plot(simplex_data[0], simplex_data[1], simplex_data[2],'m', label='Simplex', lw=4) 
-alpha = 1
+ax.plot(simplex_data[0], simplex_data[1], simplex_data[2],'m', label='Simplex', lw=4)
+#coefficients
+alpha = 2 
 gamma = 2
 rho = 0.5
 sigma = 0.5
+limit = 30
 
 ax.set_xlabel('X')
 ax.set_xlim(-40, 40)
