@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 import numpy as np
 from copy import copy
+import csv
 ### https://en.wikipedia.org/wiki/Nelder%E2%80%93Mead_method
 # Demonstration of the downhill simplex algorithm
 
@@ -85,23 +86,38 @@ def downhillSimplexIteration(simplex_data):
                 bestP[1] + sigma*(simplex_data[1][i] - bestP[1])]
         simplex_data[:, i] = newP + [f(newP)]
         
+def load_data(filename):
+    data = {'WOB':[], 'RPM':[], 'ROP':[]}
+    last_depth = 9959.0818
+    with open(filename) as f:
+        f.readline()
+        reader = csv.DictReader(f)
+        for row in reader:
+            if row['Depth - Bit']:
+                data['ROP'].append(float(row['Depth - Bit']) - last_depth)
+                last_depth = float(row['Depth - Bit'])
+            if row['Top Drive RPM']:
+                data['RPM'].append(float(row['Top Drive RPM']))
+            if row['Weight on Bit']:
+                data['WOB'].append(row['Weight on Bit'])
+    return data
+            
         
+data = load_data('data/X14_00X14-GRB #1_TIME1SEC_Run #3.csv')
+
 fig = plt.figure()
-ax = fig.gca(projection='3d')
-X, Y, Z = axes3d.get_test_data(0.05)
-ax.plot_surface(X, Y, Z, rstride=8, cstride=8, alpha=0.3)
-cset = ax.contour(X, Y, Z, zdir='z', offset=-100, cmap=cm.coolwarm)
+ax = fig.gca()
 
-x = [-15, 10., 10.]
-y = [-10., -10, 10]
-z = []
-for i in range(len(x)):
-    z.append(f([x[i], y[i]]))
+#X, Y, Z = axes3d.get_test_data(0.05)
 
-print(f([-10,10]), f([10,-10]))
+ax.plot(data['RPM'])
+ax.plot(data['ROP'])
+#ax.plot_surface(X, Y, Z, rstride=8, cstride=8, alpha=0.3)
+#cset = ax.contour(X, Y, Z, zdir='z', offset=-100, cmap=cm.coolwarm)
+
     
-simplex_data = np.array([x,y,z])
-ax.plot(simplex_data[0], simplex_data[1], simplex_data[2],'m', label='Simplex', lw=4)
+#simplex_data = np.array([x,y,z])
+#ax.plot(simplex_data[0], simplex_data[1], simplex_data[2],'m', label='Simplex', lw=4)
 #coefficients
 alpha = 2 
 gamma = 2
@@ -109,12 +125,12 @@ rho = 0.5
 sigma = 0.5
 limit = 30
 
-ax.set_xlabel('X')
-ax.set_xlim(-40, 40)
-ax.set_ylabel('Y')
-ax.set_ylim(-40, 40)
-ax.set_zlabel('Z')
-ax.set_zlim(-100, 100)
+#ax.set_xlabel('X')
+#ax.set_xlim(-40, 40)
+#ax.set_ylabel('Y')
+#ax.set_ylim(-40, 40)
+#ax.set_zlabel('Z')
+#ax.set_zlim(-100, 100)
 
 fig.canvas.mpl_connect('button_press_event',onclick)
 plt.show()
