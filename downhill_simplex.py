@@ -7,6 +7,8 @@ import csv
 ### https://en.wikipedia.org/wiki/Nelder%E2%80%93Mead_method
 # Demonstration of the downhill simplex algorithm
 
+t=1000
+
 def f(point):
     #Find Z value from X,Y,Z meshed data
     #Would be analagous to test drilling at x, y to get z
@@ -25,9 +27,17 @@ def onclick(event):
     if event.button == 2:
         downhillSimplexIteration(simplex_data)
         print(simplex_data)
-        ax.plot(simplex_data[0], simplex_data[1], simplex_data[2],'m', label='Simplex', lw=4) 
+        ax.plot(simplex_data[0], simplex_data[1], simplex_data[2], 'r', label='Simplex', lw=4) 
         fig.canvas.draw()
 
+def update_data(display_data):
+    global t
+    t += 1
+    for d in disp_data:
+        disp_data[d]['line'].set_data(range(100), data[d][t:t+100])
+        disp_data[d]['axis'].set_ylim(min(data[d][t:t+100]), max(data[d][t:t+100])+1)
+    fig.canvas.draw()
+        
 def downhillSimplexIteration(simplex_data):
     #Sort Points
     size = len(simplex_data)
@@ -87,7 +97,7 @@ def downhillSimplexIteration(simplex_data):
         simplex_data[:, i] = newP + [f(newP)]
         
 def load_data(filename):
-    data = {'WOB':[], 'RPM':[], 'ROP':[]}
+    data = {'WOB':[], 'RPM':[], 'ROP':[], 'VIB': []}
     last_depth = 9959.0818
     with open(filename) as f:
         f.readline()
@@ -99,25 +109,51 @@ def load_data(filename):
             if row['Top Drive RPM']:
                 data['RPM'].append(float(row['Top Drive RPM']))
             if row['Weight on Bit']:
-                data['WOB'].append(row['Weight on Bit'])
+                data['WOB'].append(float(row['Weight on Bit']))
+            if row['Pump Pressure']:
+                data['VIB'].append(float(row['Pump Pressure']))
     return data
             
         
 data = load_data('data/X14_00X14-GRB #1_TIME1SEC_Run #3.csv')
-
+disp_data = {'RPM':{'title': 'Top drive speed', 'xlab': 'Time(s)', 'ylab':'RPM'},
+             'WOB':{'title': 'Weight on Bit', 'xlab': 'Time(s)', 'ylab':'lbf'},
+             'ROP':{'title': 'Rate of Penetration', 'xlab': 'Time(s)', 'ylab':'meters/s'},
+             'VIB':{'title': 'Vibration Amplitude', 'xlab': 'Time(s)', 'ylab':'mm'}}
+print(data.keys())
+print(data['ROP'][0:100])
 fig = plt.figure()
-ax = fig.gca()
+i = 2
+for k in disp_data:
+    ax = fig.add_subplot(2, 3, i) 
+    ax.set_xlabel(disp_data[k]['xlab'])
+    ax.set_ylabel(disp_data[k]['ylab'])
+    ax.set_title(disp_data[k]['title'])
+    disp_data[k]['axis'] = ax
+    line, = ax.plot(data[k][0:100])
+    disp_data[k]['line'] = line
+    i += 1
+    if i == 4: i += 1
 
-#X, Y, Z = axes3d.get_test_data(0.05)
 
-ax.plot(data['RPM'])
-ax.plot(data['ROP'])
-#ax.plot_surface(X, Y, Z, rstride=8, cstride=8, alpha=0.3)
-#cset = ax.contour(X, Y, Z, zdir='z', offset=-100, cmap=cm.coolwarm)
+timer = fig.canvas.new_timer(interval=10)
+timer.add_callback(update_data, disp_data)
+timer.start()
 
+ax = fig.add_subplot(1, 3, 1, projection='3d')
+X, Y, Z = axes3d.get_test_data(0.05)
+ax.plot_surface(X, Y, Z, rstride=8, cstride=8, alpha=0.3)
+cset = ax.contour(X, Y, Z, zdir='z', offset=-100, cmap=cm.coolwarm)
+
+x = [-15, 10., 10.]
+y = [-10., -10, 10]
+z = []
+for i in range(len(x)):
+    z.append(f([x[i], y[i]]))
     
-#simplex_data = np.array([x,y,z])
-#ax.plot(simplex_data[0], simplex_data[1], simplex_data[2],'m', label='Simplex', lw=4)
+simplex_data = np.array([x,y,z])
+ax.plot(simplex_data[0], simplex_data[1], simplex_data[2],'r', label='Simplex', lw=4)
+
 #coefficients
 alpha = 2 
 gamma = 2
@@ -125,11 +161,11 @@ rho = 0.5
 sigma = 0.5
 limit = 30
 
-#ax.set_xlabel('X')
-#ax.set_xlim(-40, 40)
-#ax.set_ylabel('Y')
+ax.set_xlabel('RPM')
+#ax.set_xlim(-40.2, 40)
+ax.set_ylabel('WOB')
 #ax.set_ylim(-40, 40)
-#ax.set_zlabel('Z')
+ax.set_zlabel('COST FUNCTION (ROP - VIB)')
 #ax.set_zlim(-100, 100)
 
 fig.canvas.mpl_connect('button_press_event',onclick)
