@@ -3,8 +3,10 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 import numpy as np
 from copy import copy
+import csv
 ### https://en.wikipedia.org/wiki/Nelder%E2%80%93Mead_method
 # Demonstration of the downhill simplex algorithm
+
 
 def f(point):
     #Find Z value from X,Y,Z meshed data
@@ -21,12 +23,14 @@ def f(point):
     return Z[yIndex][xIndex]
 
 def onclick(event):
-    if event.button == 2:
+    if event.button == 3:
         downhillSimplexIteration(simplex_data)
         print(simplex_data)
-        ax.plot(simplex_data[0], simplex_data[1], simplex_data[2],'m', label='Simplex', lw=4) 
+        line[0].set_data((list(simplex_data[0])+[simplex_data[0][0]],
+                          list(simplex_data[1])+[simplex_data[1][0]]))
+        line[0].set_3d_properties(list(simplex_data[2])+[simplex_data[2][0]])
         fig.canvas.draw()
-
+        
 def downhillSimplexIteration(simplex_data):
     #Sort Points
     size = len(simplex_data)
@@ -84,24 +88,29 @@ def downhillSimplexIteration(simplex_data):
         newP = [bestP[0] + sigma*(simplex_data[0][i] - bestP[0]),
                 bestP[1] + sigma*(simplex_data[1][i] - bestP[1])]
         simplex_data[:, i] = newP + [f(newP)]
+    
+            
         
-        
+
 fig = plt.figure()
-ax = fig.gca(projection='3d')
+
+ax = fig.add_subplot(1, 1, 1, projection='3d')
 X, Y, Z = axes3d.get_test_data(0.05)
 ax.plot_surface(X, Y, Z, rstride=8, cstride=8, alpha=0.3)
-cset = ax.contour(X, Y, Z, zdir='z', offset=-100, cmap=cm.coolwarm)
+#cset = ax.contour(X, Y, Z, zdir='z', offset=-100, cmap=cm.coolwarm)
 
 x = [-15, 10., 10.]
 y = [-10., -10, 10]
 z = []
 for i in range(len(x)):
     z.append(f([x[i], y[i]]))
-
-print(f([-10,10]), f([10,-10]))
     
 simplex_data = np.array([x,y,z])
-ax.plot(simplex_data[0], simplex_data[1], simplex_data[2],'m', label='Simplex', lw=4)
+line = ax.plot(list(simplex_data[0])+[simplex_data[0][0]],
+               list(simplex_data[1])+[simplex_data[1][0]],
+               list(simplex_data[2])+[simplex_data[2][0]],
+               'r', label='Simplex', lw=4)
+
 #coefficients
 alpha = 2 
 gamma = 2
@@ -109,12 +118,12 @@ rho = 0.5
 sigma = 0.5
 limit = 30
 
-ax.set_xlabel('X')
-ax.set_xlim(-40, 40)
-ax.set_ylabel('Y')
-ax.set_ylim(-40, 40)
-ax.set_zlabel('Z')
-ax.set_zlim(-100, 100)
+ax.set_xlabel('RPM')
+#ax.set_xlim(-40.2, 40)
+ax.set_ylabel('WOB')
+#ax.set_ylim(-40, 40)
+ax.set_zlabel('OBJECTIVE FUNCTION')
+#ax.set_zlim(-100, 100)
 
 fig.canvas.mpl_connect('button_press_event',onclick)
 plt.show()
