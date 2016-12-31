@@ -6,6 +6,7 @@ from copy import copy
 import csv
 ### https://en.wikipedia.org/wiki/Nelder%E2%80%93Mead_method
 # Demonstration of the downhill simplex algorithm
+# and data display system
 
 t=1000
 
@@ -34,8 +35,9 @@ def update_data(display_data):
     global t
     t += 1
     for d in disp_data:
-        disp_data[d]['line'].set_data(range(100), data[d][t:t+100])
+        disp_data[d]['line'].set_data(range(t, t+100), data[d][t:t+100])
         disp_data[d]['axis'].set_ylim(min(data[d][t:t+100]), max(data[d][t:t+100])+1)
+        disp_data[d]['axis'].set_xlim(t, t+100)
     fig.canvas.draw()
         
 def downhillSimplexIteration(simplex_data):
@@ -121,7 +123,7 @@ disp_data = {'RPM':{'title': 'Top drive speed', 'xlab': 'Time(s)', 'ylab':'RPM'}
              'ROP':{'title': 'Rate of Penetration', 'xlab': 'Time(s)', 'ylab':'meters/s'},
              'VIB':{'title': 'Vibration Amplitude', 'xlab': 'Time(s)', 'ylab':'mm'}}
 print(data.keys())
-print(data['ROP'][0:100])
+
 fig = plt.figure()
 i = 2
 for k in disp_data:
@@ -133,7 +135,8 @@ for k in disp_data:
     line, = ax.plot(data[k][0:100])
     disp_data[k]['line'] = line
     i += 1
-    if i == 4: i += 1
+    if i == 4:
+        i = 5
 
 
 timer = fig.canvas.new_timer(interval=10)
