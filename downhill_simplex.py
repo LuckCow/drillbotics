@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 import numpy as np
 from copy import copy
-import csv
+import matplotlib.animation as animation
+
 ### https://en.wikipedia.org/wiki/Nelder%E2%80%93Mead_method
 # Demonstration of the downhill simplex algorithm
 
@@ -20,15 +21,15 @@ def f(point):
         if abs(Y[i][0] - point[1]) < 0.25:
             yIndex = i
             break
-    return Z[yIndex][xIndex]
+    return -Z[yIndex][xIndex]
 
 def onclick(event):
     if event.button == 3:
         downhillSimplexIteration(simplex_data)
         print(simplex_data)
-        line[0].set_data((list(simplex_data[0])+[simplex_data[0][0]],
+        line.set_data((list(simplex_data[0])+[simplex_data[0][0]],
                           list(simplex_data[1])+[simplex_data[1][0]]))
-        line[0].set_3d_properties(list(simplex_data[2])+[simplex_data[2][0]])
+        line.set_3d_properties(list(-simplex_data[2])+[-simplex_data[2][0]])
         fig.canvas.draw()
         
 def downhillSimplexIteration(simplex_data):
@@ -106,9 +107,9 @@ for i in range(len(x)):
     z.append(f([x[i], y[i]]))
     
 simplex_data = np.array([x,y,z])
-line = ax.plot(list(simplex_data[0])+[simplex_data[0][0]],
+line, = ax.plot(list(simplex_data[0])+[simplex_data[0][0]],
                list(simplex_data[1])+[simplex_data[1][0]],
-               list(simplex_data[2])+[simplex_data[2][0]],
+               list(-simplex_data[2])+[-simplex_data[2][0]],
                'r', label='Simplex', lw=4)
 
 #coefficients
